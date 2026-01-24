@@ -14,7 +14,10 @@
 <body>
     <%- include("../includes/navbar.ejs") %>
 
-    <div class="container-fluid px-4"><%- body %></div>
+    <div class="container-fluid px-4">
+        <%- include("../includes/flash.ejs") %>
+        <%- body %>
+    </div>
 
     <%- include("../includes/footer.ejs") %>
 
