@@ -9,16 +9,10 @@ const listingSchema = new Schema({
     },
     description: String,
     image: {
-    filename: String,
-    url: {
-      type: String,
-      default:
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=60",
-      set: (v) => v === "" ? 
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=60" 
-        : v,
-    },
-  }, 
+      url: String,
+      filename: String,
+    
+    }, 
     price: Number,
     location: String,
     country: String,
@@ -32,6 +26,21 @@ const listingSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    geometry: {
+    type: {
+      type: String, // Don't do `{ location: { type: String } }`
+      enum: ['Point'], // 'location.type' must be 'Point'
+      required: true
+    },
+    coordinates: {
+      type: [Number],
+      required: true
+    },
+  },
+ // category: {
+  //  type:String,
+  //  enum: ["mountains", "arctic", "farms", "deserts"]
+ // }
 
 });
 

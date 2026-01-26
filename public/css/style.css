@@ -139,5 +139,18 @@ body{
   object-fit: cover;
 }
 
+.edit-preview {
+  width: 250px;      
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+/*map*/
+#map {
+     height: 400px;
+     width: 100vh;
+    }
 
 

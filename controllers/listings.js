@@ -1,4 +1,7 @@
 const Listing = require("../models/listing");
+const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
+const mapToken = process.env.MAP_TOKEN;
+const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 
 
 module.exports.index = async (req, res) => {
@@ -23,10 +26,23 @@ module.exports.showListing = async (req, res) => {
 };
 
 module.exports.createListing = async (req, res, next) => {
-   
+       let response = await geocodingClient.forwardGeocode({
+        query: req.body.listing.location,
+        limit: 1,
+        })
+        .send();
+
+         let url = req.file.path;
+         let filename = req.file.filename;
+
          const newListing = new Listing(req.body.listing);
          newListing.owner = req.user._id;
-         await newListing.save();
+         newListing.image = {url, filename};
+
+         newListing.geometry = response.body.features[0].geometry;
+         
+         let savedListing = await newListing.save();
+         console.log(savedListing);
          req.flash("success", "New Listing Created!");
          res.redirect("/listings");
 
@@ -39,39 +55,56 @@ module.exports.renderEditForm = async (req, res) => {
       req.flash("error", "Listing you requested for does not exist!");
       return res.redirect("/listings");
     }
-    res.render("listings/edit.ejs", { listing });
+
+    let originalImageUrl = listing.image.url;
+    originalImageUrl = originalImageUrl.replace("/upload", "/upload/w_250");
+    res.render("listings/edit.ejs", { listing, originalImageUrl });
 };
 
 module.exports.updateListing = async (req, res) => {
   let { id } = req.params;
-  const listing = await Listing.findById(id);
 
- // if(!listing){
- // req.flash("error", "Listing not found!");
-  //return res.redirect("/listings");
-//}
+  // ✅ First find listing properly
+  let listing = await Listing.findById(id);
 
+  if (!listing) {
+    req.flash("error", "Listing not found!");
+    return res.redirect("/listings");
+  }
 
-
-
+  // ✅ Update normal fields
   listing.title = req.body.listing.title;
   listing.description = req.body.listing.description;
   listing.price = req.body.listing.price;
   listing.location = req.body.listing.location;
   listing.country = req.body.listing.country;
+  
 
-  // ✅ THIS IS THE KEY FIX
-  if (req.body.listing.image && req.body.listing.image.trim() !== "") {
+
+  // ✅ If new file uploaded (Cloudinary / multer)
+  if (req.file) {
+    let url = req.file.path;
+    let filename = req.file.filename;
+    listing.image = { url, filename };
+  }
+
+  // ✅ If image URL manually updated (optional case)
+  else if (
+    req.body.listing.image &&
+    req.body.listing.image.trim() !== ""
+  ) {
     listing.image.url = req.body.listing.image;
   }
-    
-   
 
+  // ✅ SAVE ONCE AT END
   await listing.save();
-  
+
   req.flash("success", "Listing Updated!");
   res.redirect(`/listings/${id}`);
 };
+
+
+
 
 module.exports.destroyListing = async (req, res) => {
     let { id }=req.params;
